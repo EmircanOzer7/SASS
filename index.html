@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Süper Hızlı Flashcard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobil Uyumlu Flashcard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -15,14 +15,15 @@
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            box-sizing: border-box;
         }
 
         /* --- ANA KONTEYNERLER --- */
@@ -31,7 +32,7 @@
             gap: 20px;
             max-width: 1000px;
             width: 100%;
-            height: 85vh;
+            height: 85vh; /* Masaüstünde sabit yükseklik */
         }
 
         /* --- SOL SÜTUN: EDİTÖR --- */
@@ -44,9 +45,10 @@
             display: flex;
             flex-direction: column;
             overflow-y: auto;
+            position: relative;
         }
 
-        h2 { margin-top: 0; color: var(--primary); }
+        h2 { margin-top: 0; color: var(--primary); font-size: 1.5rem; }
 
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #636e72; }
@@ -58,10 +60,11 @@
             border-radius: 8px;
             box-sizing: border-box;
             transition: 0.3s;
+            font-size: 16px; /* Mobilde zoom yapmaması için */
         }
         input[type="text"]:focus { border-color: var(--primary); outline: none; }
 
-        /* --- MEDYA ALANI (Ctrl+V & Dosya) --- */
+        /* --- MEDYA ALANI --- */
         .media-dropzone {
             border: 2px dashed #b2bec3;
             border-radius: 10px;
@@ -70,16 +73,15 @@
             background: #f1f2f6;
             cursor: pointer;
             transition: 0.3s;
-            position: relative;
             margin-bottom: 15px;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .media-dropzone:hover {
+        .media-dropzone:active, .media-dropzone:hover {
             border-color: var(--primary);
             background: #ecebfc;
         }
         
-        /* Resim eklendiğinde yeşil yanıp sönmesi için */
         .media-dropzone.success-flash {
             animation: flashGreen 0.5s ease;
             border-color: #00b894;
@@ -91,12 +93,11 @@
             100% { background-color: #f1f2f6; }
         }
 
-        .media-dropzone p { margin: 0; color: #636e72; font-size: 0.9rem; }
-        .media-dropzone i { font-size: 2rem; color: var(--secondary); margin-bottom: 10px; }
+        .media-dropzone p { margin: 0; color: #636e72; font-size: 0.9rem; pointer-events: none; }
+        .media-dropzone i { font-size: 2rem; color: var(--secondary); margin-bottom: 10px; pointer-events: none; }
 
-        #fileInput { display: none; } /* Gizli input */
+        #fileInput { display: none; }
 
-        /* Önizleme Resmi */
         #previewImg {
             max-width: 100%;
             max-height: 150px;
@@ -111,23 +112,24 @@
 
         /* Butonlar */
         .btn {
-            padding: 12px;
+            padding: 14px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
             transition: 0.2s;
             width: 100%;
+            font-size: 1rem;
         }
 
         .btn-add { background: var(--primary); color: white; margin-top: 10px; }
-        .btn-add:hover { background: #5649c0; }
+        .btn-add:active { transform: scale(0.98); }
 
         .btn-start { 
             background: #00b894; color: white; 
             margin-top: auto; 
-            font-size: 1.2rem;
-            padding: 15px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         /* --- SAĞ SÜTUN: LİSTE --- */
@@ -143,43 +145,50 @@
         .word-item {
             display: flex;
             align-items: center;
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #eee;
-            gap: 10px;
+            gap: 12px;
+            background: white;
         }
 
         .word-item img {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 6px;
             background: #eee;
         }
 
         .word-info { flex: 1; }
-        .word-eng { font-weight: bold; }
+        .word-eng { font-weight: bold; font-size: 1rem; }
         .word-tr { font-size: 0.9rem; color: #636e72; }
         
         .btn-del { 
             background: #ff7675; color: white; border: none; 
-            width: 25px; height: 25px; border-radius: 50%; cursor: pointer; 
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer; 
+            font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
         }
 
         /* --- STUDY MODE (FLASHCARD) --- */
         #studyMode {
             display: none;
             width: 100%;
-            height: 100%;
+            height: 90vh; /* Mobilde tam ekran hissi */
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
         .card-scene {
-            width: 350px;
-            height: 500px;
+            width: 400px;
+            max-width: 90vw; /* Mobilde taşmasın */
+            height: 550px;
+            max-height: 60vh;
             perspective: 1000px;
             cursor: pointer;
+            margin: 20px 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .card {
@@ -198,7 +207,7 @@
             height: 100%;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            border-radius: 15px;
+            border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
@@ -218,22 +227,81 @@
         }
         
         .card-back img {
-            max-width: 90%;
-            max-height: 50%;
+            max-width: 95%;
+            max-height: 55%;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             object-fit: contain;
         }
 
         .return-btn {
             position: absolute;
-            top: 20px; left: 20px;
+            top: 0; left: 0;
             background: white; padding: 10px 20px;
             border-radius: 30px; border: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             cursor: pointer; font-weight: bold; color: var(--text);
+            z-index: 10;
         }
 
+        .nav-controls {
+            display: flex; gap: 20px; width: 100%; justify-content: center;
+        }
+        
+        .nav-btn {
+            background: white; width: 60px; height: 60px;
+            border-radius: 50%; border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 1.2rem; color: var(--text);
+            cursor: pointer;
+        }
+        .nav-btn:active { transform: scale(0.95); background: #f0f0f0; }
+
+
+        /* --- RESPONSIVE MEDIA QUERIES (MOBİL UYUMLULUK) --- */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            
+            .app-container {
+                flex-direction: column; /* Alt alta diz */
+                height: auto; /* İçerik kadar uzasın */
+                margin-bottom: 80px; /* Alttaki yüzen buton için boşluk */
+            }
+
+            .editor-panel {
+                min-height: auto;
+                padding: 20px;
+            }
+
+            /* Mobilde 'Çalışmaya Başla' butonu ekranın altında yüzer (Floating) */
+            .btn-start {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: auto;
+                padding: 15px 30px;
+                border-radius: 50px;
+                box-shadow: 0 5px 20px rgba(0,184,148, 0.4);
+                z-index: 100;
+                margin: 0;
+            }
+
+            .list-panel {
+                max-height: 500px; /* Çok uzarsa kaydırılabilir olsun */
+            }
+
+            .card-scene {
+                height: 50vh; /* Mobilde kart yüksekliğini ayarla */
+            }
+            
+            .media-dropzone p strong {
+                display: none; /* Mobilde Ctrl+V yazısını gizle */
+            }
+            .media-dropzone p::after {
+                content: "Dokun ve Resim Seç";
+                font-weight: bold;
+            }
+        }
     </style>
 </head>
 <body>
@@ -245,61 +313,62 @@
             
             <div class="input-group">
                 <label>İngilizce Kelime</label>
-                <input type="text" id="inpEng" placeholder="Örn: Serendipity">
+                <input type="text" id="inpEng" placeholder="Örn: Serendipity" autocomplete="off">
             </div>
 
             <div class="input-group">
                 <label>Türkçe Anlamı</label>
-                <input type="text" id="inpTr" placeholder="Örn: Mutlu tesadüf">
+                <input type="text" id="inpTr" placeholder="Örn: Mutlu tesadüf" autocomplete="off">
             </div>
 
-            <label style="font-weight:600; color:#636e72; display:block; margin-bottom:5px;">Görsel / GIF</label>
+            <label style="font-weight:600; color:#636e72; display:block; margin-bottom:5px;">Görsel</label>
             
             <div class="media-dropzone" id="pasteArea">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p><strong>CTRL + V</strong> ile direkt yapıştır</p>
-                <p style="font-size:0.8rem; margin-top:5px;">veya dosya seçmek için tıkla</p>
+                <i class="fas fa-camera"></i>
+                <p><strong>CTRL + V ile yapıştır</strong></p>
+                <p style="font-size:0.8rem; margin-top:5px;">veya galeriden seç</p>
                 <input type="file" id="fileInput" accept="image/*">
                 <img id="previewImg" src="" alt="Önizleme">
             </div>
 
-            <div class="or-divider">- VEYA LINK -</div>
+            <div class="or-divider">- VEYA GIF LINKI -</div>
 
             <div class="input-group">
-                <input type="text" id="inpGifLink" placeholder="Giphy GIF Linkini buraya yapıştır...">
+                <input type="text" id="inpGifLink" placeholder="Giphy linkini yapıştır..." autocomplete="off">
             </div>
 
-            <button class="btn btn-add" onclick="addCard()">Listeye Ekle</button>
-            <button class="btn btn-start" onclick="startStudy()">Çalışmaya Başla <i class="fas fa-arrow-right"></i></button>
+            <button class="btn btn-add" onclick="addCard()">Listeye Ekle <i class="fas fa-check"></i></button>
+            
+            <button class="btn btn-start" onclick="startStudy()">Başla <i class="fas fa-play"></i></button>
         </div>
 
         <div class="list-panel">
-            <h3 style="margin-top:0; color:var(--text)">Eklenen Kartlar (<span id="count">0</span>)</h3>
+            <h3 style="margin-top:0; color:var(--text)">Kartlarım (<span id="count">0</span>)</h3>
             <div id="wordList">
-                <p style="color:#b2bec3; text-align:center;">Henüz kart eklemedin.</p>
+                <p style="color:#b2bec3; text-align:center; padding: 20px;">Henüz kart eklemedin.</p>
             </div>
         </div>
     </div>
 
     <div id="studyMode">
-        <button class="return-btn" onclick="stopStudy()"><i class="fas fa-arrow-left"></i> Düzenleyiciye Dön</button>
+        <button class="return-btn" onclick="stopStudy()"><i class="fas fa-arrow-left"></i> Dön</button>
         
         <div class="card-scene" onclick="flipCard()">
             <div class="card" id="flashcard">
                 <div class="card-face card-front">
-                    <h1 id="studyEng" style="font-size: 2.5rem; color:var(--primary);">...</h1>
-                    <p style="color:#b2bec3; margin-top:20px;">(Dokun ve Çevir)</p>
+                    <h1 id="studyEng" style="font-size: 2rem; color:var(--primary); word-wrap: break-word;">...</h1>
+                    <p style="color:#b2bec3; margin-top:20px; font-size: 0.9rem;">(Dokun)</p>
                 </div>
                 <div class="card-face card-back">
                     <img id="studyImg" src="" style="display:none">
-                    <h2 id="studyTr">...</h2>
+                    <h2 id="studyTr" style="word-wrap: break-word;">...</h2>
                 </div>
             </div>
         </div>
 
-        <div style="margin-top:30px; display:flex; gap:20px;">
-            <button class="btn" style="background:white; width:auto; padding:10px 20px;" onclick="prevCard()"><i class="fas fa-chevron-left"></i> Önceki</button>
-            <button class="btn" style="background:white; width:auto; padding:10px 20px;" onclick="nextCard()">Sonraki <i class="fas fa-chevron-right"></i></button>
+        <div class="nav-controls">
+            <button class="nav-btn" onclick="prevCard()"><i class="fas fa-chevron-left"></i></button>
+            <button class="nav-btn" onclick="nextCard()"><i class="fas fa-chevron-right"></i></button>
         </div>
     </div>
 
@@ -308,47 +377,32 @@
         let currentImageBase64 = null;
         let studyIndex = 0;
 
-        // --- DOM ELEMENTLERİ ---
         const pasteArea = document.getElementById('pasteArea');
         const fileInput = document.getElementById('fileInput');
         const previewImg = document.getElementById('previewImg');
         const gifInput = document.getElementById('inpGifLink');
         const wordListEl = document.getElementById('wordList');
 
-        // --- GLOBAL PASTE LISTENERS (DÜZELTİLDİ) ---
-        // Artık sayfanın herhangi bir yerindeyken Ctrl+V çalışır
+        // --- PASTE & UPLOAD ---
         document.addEventListener('paste', function(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             let blob = null;
-
-            // Panodaki öğeleri tara, resim varsa yakala
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf("image") === 0) {
                     blob = items[i].getAsFile();
                     break;
                 }
             }
-
-            // Eğer resim bulduysak işle
             if (blob) {
-                // Eğer odak bir yazı kutusundaysa ve resim yapıştırılıyorsa
-                // varsayılanı engellemeye gerek yok ama görsel geri bildirimi verelim.
                 handleFile(blob);
-                
-                // Görsel efekti: Alanın yanıp sönmesi
                 pasteArea.classList.add('success-flash');
-                setTimeout(() => {
-                    pasteArea.classList.remove('success-flash');
-                }, 500);
+                setTimeout(() => pasteArea.classList.remove('success-flash'), 500);
             }
         });
 
-        // Tıklayarak Dosya Seçme
-        pasteArea.addEventListener('click', (e) => {
-            fileInput.click();
-        });
+        pasteArea.addEventListener('click', () => fileInput.click());
 
-        fileInput.addEventListener('change', function(e) {
+        fileInput.addEventListener('change', function() {
             handleFile(this.files[0]);
         });
 
@@ -359,13 +413,11 @@
                 currentImageBase64 = e.target.result;
                 previewImg.src = currentImageBase64;
                 previewImg.style.display = 'block';
-                // Link inputunu temizle karışmasın
                 gifInput.value = '';
             }
             reader.readAsDataURL(file);
         }
 
-        // GIF Linki girilirse resmi sıfırla
         gifInput.addEventListener('input', () => {
             if(gifInput.value.length > 0) {
                 currentImageBase64 = null;
@@ -374,7 +426,6 @@
         });
 
         // --- KART YÖNETİMİ ---
-
         function addCard() {
             const eng = document.getElementById('inpEng').value.trim();
             const tr = document.getElementById('inpTr').value.trim();
@@ -385,18 +436,11 @@
             }
 
             if (!eng || !tr) {
-                alert("Lütfen İngilizce ve Türkçe alanlarını doldurun.");
+                alert("Lütfen kelimeleri giriniz.");
                 return;
             }
 
-            const newCard = {
-                id: Date.now(),
-                eng: eng,
-                tr: tr,
-                img: finalImage
-            };
-
-            cards.push(newCard);
+            cards.push({ id: Date.now(), eng, tr, img: finalImage });
             renderList();
             resetForm();
         }
@@ -408,17 +452,15 @@
             previewImg.src = '';
             previewImg.style.display = 'none';
             currentImageBase64 = null;
-            document.getElementById('inpEng').focus(); // Seri ekleme için başa dön
+            document.getElementById('inpEng').focus();
         }
 
         function renderList() {
             document.getElementById('count').innerText = cards.length;
-            
             if (cards.length === 0) {
-                wordListEl.innerHTML = '<p style="color:#b2bec3; text-align:center;">Henüz kart eklemedin.</p>';
+                wordListEl.innerHTML = '<p style="color:#b2bec3; text-align:center; padding:20px">Henüz kart eklemedin.</p>';
                 return;
             }
-
             wordListEl.innerHTML = '';
             cards.forEach((card, index) => {
                 const div = document.createElement('div');
@@ -441,10 +483,9 @@
         }
 
         // --- STUDY MODE ---
-
         function startStudy() {
             if (cards.length === 0) {
-                alert("Lütfen önce listeye en az bir kart ekle!");
+                alert("Önce kart eklemelisin!");
                 return;
             }
             document.getElementById('editorContainer').style.display = 'none';
@@ -469,7 +510,6 @@
                 const item = cards[index];
                 studyEng.innerText = item.eng;
                 studyTr.innerText = item.tr;
-                
                 if (item.img) {
                     studyImg.src = item.img;
                     studyImg.style.display = 'block';
@@ -479,19 +519,9 @@
             }, 200);
         }
 
-        function flipCard() {
-            cardEl.classList.toggle('is-flipped');
-        }
-
-        function nextCard() {
-            studyIndex = (studyIndex + 1) % cards.length;
-            showCard(studyIndex);
-        }
-
-        function prevCard() {
-            studyIndex = (studyIndex - 1 + cards.length) % cards.length;
-            showCard(studyIndex);
-        }
+        function flipCard() { cardEl.classList.toggle('is-flipped'); }
+        function nextCard() { studyIndex = (studyIndex + 1) % cards.length; showCard(studyIndex); }
+        function prevCard() { studyIndex = (studyIndex - 1 + cards.length) % cards.length; showCard(studyIndex); }
 
         document.addEventListener('keydown', (e) => {
             if (document.getElementById('studyMode').style.display === 'flex') {
@@ -500,7 +530,6 @@
                 if (e.code === 'ArrowLeft') prevCard();
             }
         });
-
     </script>
 </body>
 </html>
